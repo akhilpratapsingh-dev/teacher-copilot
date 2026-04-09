@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, CheckCircle2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, CheckCircle2, RotateCcw, MessageSquare, FileText } from 'lucide-react';
 import { getResults, updateOverride } from '@/lib/storage';
 import { exportToExcel } from '@/lib/excelExport';
 import { pct, scoreColor, scoreGrade, formatDate } from '@/lib/utils';
@@ -42,6 +42,67 @@ export default function ExamResultsPage() {
 
   const handleExport = () => {
     exportToExcel(result); setExportDone(true); setTimeout(() => setExportDone(false), 3000);
+  };
+
+  const shareWhatsApp = (s: typeof students[0]) => {
+    const total = effTotal(s);
+    const text = [
+      `📊 *${result.title} — Result*`,
+      `📅 ${formatDate(result.date)} | 🏫 ${result.className}`,
+      ``,
+      `👤 *Student:* ${s.name}`,
+      `🎯 *Score:* ${total}/${maxTotal} (${pct(total,maxTotal)})`,
+      `🏅 *Grade:* ${scoreGrade(total,maxTotal)}`,
+      ``,
+      `💬 *Feedback:* ${s.overallFeedback}`,
+      `📌 *Revise:* ${s.revise || 'None'}`,
+      ``,
+      `_Powered by Teacher Copilot AI_`
+    ].join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,'_blank');
+  };
+
+  const printReportCard = (s: typeof students[0]) => {
+    const total = effTotal(s);
+    const grade = scoreGrade(total, maxTotal);
+    const gradeColor = total/maxTotal>=0.8?'#10b981':total/maxTotal>=0.5?'#f59e0b':'#ef4444';
+    const qs = s.questions.map((q) => {
+      const m = effMark(s.name, q.qNo, q.isOverridden&&q.overriddenMark!=null?q.overriddenMark:q.marksAwarded);
+      const c = m/q.maxMarks>=0.8?'#10b981':m/q.maxMarks>=0.5?'#f59e0b':'#ef4444';
+      return `<tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:10px 12px;font-weight:600;color:#6366f1">Q${q.qNo}</td>
+        <td style="padding:10px 12px;color:#374151">${q.strength||'—'}</td>
+        <td style="padding:10px 12px;color:#374151">${q.mistake||'—'}</td>
+        <td style="padding:10px 12px;text-align:center;font-weight:700;color:${c}">${m}/${q.maxMarks}</td>
+      </tr>`;
+    }).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Report Card — ${s.name}</title>
+    <style>body{font-family:system-ui,sans-serif;margin:0;padding:32px;color:#111827;background:#fff}
+    @media print{body{padding:16px}button{display:none!important}}
+    </style></head><body>
+    <div style="max-width:700px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
+        <div><div style="font-size:22px;font-weight:800;color:#6366f1">🎓 Teacher Copilot</div><div style="color:#6b7280;font-size:13px">AI Grading Report Card</div></div>
+        <button onclick="window.print()" style="background:#6366f1;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨️ Print / Save PDF</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+        <div><div style="font-size:24px;font-weight:800;color:#111827">${s.name}</div><div style="color:#6b7280;margin-top:4px">${result.className} · ${result.subject}</div><div style="color:#6b7280;font-size:13px">${formatDate(result.date)}</div></div>
+        <div style="text-align:right"><div style="font-size:40px;font-weight:900;color:${gradeColor}">${grade}</div><div style="font-size:18px;font-weight:700;color:${gradeColor}">${total}/${maxTotal}</div><div style="color:#9ca3af;font-size:13px">${pct(total,maxTotal)}</div></div>
+      </div>
+      <div style="background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Overall Feedback</div>
+        <div style="color:#374151;line-height:1.6">${s.overallFeedback}</div>
+        ${s.revise?`<div style="margin-top:10px;font-size:13px;color:#f59e0b">📌 <strong>Revise:</strong> ${s.revise}</div>`:''}
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <thead><tr style="background:#f3f4f6"><th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600">Q</th><th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600">Strength</th><th style="padding:10px 12px;text-align:left;font-size:12px;color:#6b7280;font-weight:600">Mistake</th><th style="padding:10px 12px;text-align:center;font-size:12px;color:#6b7280;font-weight:600">Score</th></tr></thead>
+        <tbody>${qs}</tbody>
+      </table>
+      <div style="text-align:center;color:#d1d5db;font-size:12px;border-top:1px solid #f3f4f6;padding-top:16px">Generated by Teacher Copilot AI · teacher-copilot-eight.vercel.app</div>
+    </div></body></html>`;
+    const w = window.open('','_blank'); if(!w) return;
+    w.document.write(html); w.document.close();
+    setTimeout(()=>w.print(), 500);
   };
 
   const student = students[activeStudent];
@@ -120,9 +181,17 @@ export default function ExamResultsPage() {
                   </div>
                   <p className="text-sm text-gray-400">Revise: <span className="text-gray-600 dark:text-gray-300">{student.revise}</span></p>
                 </div>
-                <div className={`px-4 py-2 rounded-xl border-2 text-center ${scoreColor(effTotal(student),maxTotal).replace('text-','border-').replace(' dark:text-emerald-400',' dark:border-emerald-700').replace(' dark:text-amber-400',' dark:border-amber-700').replace(' dark:text-red-400',' dark:border-red-700')} bg-opacity-10`}>
-                  <div className={`text-2xl font-bold ${scoreColor(effTotal(student),maxTotal)}`}>{effTotal(student)}/{maxTotal}</div>
-                  <div className="text-xs text-gray-400">{pct(effTotal(student),maxTotal)} · Grade {scoreGrade(effTotal(student),maxTotal)}</div>
+                <div className="flex items-center gap-2">
+                  <button onClick={()=>shareWhatsApp(student)} title="Share on WhatsApp" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors border border-emerald-200 dark:border-emerald-800">
+                    <MessageSquare className="w-3.5 h-3.5"/>WhatsApp
+                  </button>
+                  <button onClick={()=>printReportCard(student)} title="Print Report Card" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors border border-primary-200 dark:border-primary-800">
+                    <FileText className="w-3.5 h-3.5"/>Report Card
+                  </button>
+                  <div className={`px-4 py-2 rounded-xl border-2 text-center ${scoreColor(effTotal(student),maxTotal).replace('text-','border-').replace(' dark:text-emerald-400',' dark:border-emerald-700').replace(' dark:text-amber-400',' dark:border-amber-700').replace(' dark:text-red-400',' dark:border-red-700')} bg-opacity-10`}>
+                    <div className={`text-2xl font-bold ${scoreColor(effTotal(student),maxTotal)}`}>{effTotal(student)}/{maxTotal}</div>
+                    <div className="text-xs text-gray-400">{pct(effTotal(student),maxTotal)} · Grade {scoreGrade(effTotal(student),maxTotal)}</div>
+                  </div>
                 </div>
               </div>
 

@@ -37,3 +37,30 @@ export const updateOverride=(examId:string,sName:string,qNo:number,mark:number,r
 };
 export const getStudentHistory=(name:string,classId:string)=>
   getResults().filter(r=>r.classId===classId&&r.students.some(s=>s.name===name));
+
+// ── Backup & Restore ──────────────────────────────────────────────────────────
+export function exportAllData():void{
+  const data={classes:getClasses(),exams:getExams(),results:getResults(),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`teacher-copilot-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+export function importAllData(file:File):Promise<void>{
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const data=JSON.parse(e.target?.result as string);
+        if(data.classes)save(K.classes,data.classes);
+        if(data.exams)save(K.exams,data.exams);
+        if(data.results)save(K.results,data.results);
+        resolve();
+      }catch{reject(new Error('Invalid backup file. Please select a valid Teacher Copilot backup JSON.'));}
+    };
+    reader.onerror=()=>reject(new Error('Failed to read file.'));
+    reader.readAsText(file);
+  });
+}

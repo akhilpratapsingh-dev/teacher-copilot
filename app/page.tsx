@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { Plus, BookOpen, BarChart3, Users, Trash2, ChevronRight, GraduationCap, TrendingUp } from 'lucide-react';
-import { getClasses, addClass, deleteClass, getResults } from '@/lib/storage';
+import { Plus, BookOpen, BarChart3, Users, Trash2, ChevronRight, GraduationCap, TrendingUp, Download, Upload } from 'lucide-react';
+import { getClasses, addClass, deleteClass, getResults, exportAllData, importAllData } from '@/lib/storage';
 import { formatDate } from '@/lib/utils';
 import type { Class } from '@/lib/types';
 
@@ -11,8 +11,20 @@ export default function HomePage() {
   const [show, setShow] = useState(false);
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
+  const [backupDone, setBackupDone] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState('');
+  const restoreRef = useRef<HTMLInputElement>(null);
   const refresh = useCallback(() => setClasses(getClasses()), []);
   useEffect(() => { refresh(); }, [refresh]);
+
+  const handleExport = () => { exportAllData(); setBackupDone(true); setTimeout(() => setBackupDone(false), 3000); };
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    if (!confirm('This will REPLACE all current data with the backup. Are you sure?')) { e.target.value=''; return; }
+    try { await importAllData(file); refresh(); setRestoreMsg('✅ Data restored successfully!'); setTimeout(() => setRestoreMsg(''), 3000); }
+    catch (err) { setRestoreMsg('❌ ' + (err instanceof Error ? err.message : 'Restore failed')); setTimeout(() => setRestoreMsg(''), 4000); }
+    e.target.value='';
+  };
 
   const handleCreate = () => {
     if (!name.trim() || !subject.trim()) return;
@@ -47,10 +59,20 @@ export default function HomePage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Classes</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Manage classes, run AI exams, and track student progress — all stored locally.</p>
         </div>
-        <button onClick={() => setShow(true)} className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-primary-200 dark:shadow-primary-900/30 transition-all">
-          <Plus className="w-4 h-4" /> New Class
-        </button>
+        <div className="flex items-center gap-2">
+          <input ref={restoreRef} type="file" accept=".json" className="hidden" onChange={handleImport}/>
+          <button onClick={()=>restoreRef.current?.click()} className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-700 hover:text-primary-600 dark:hover:text-primary-400 transition-all bg-white dark:bg-gray-900">
+            <Upload className="w-4 h-4"/> Restore
+          </button>
+          <button onClick={handleExport} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-all ${backupDone?'border-emerald-300 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-700 hover:text-primary-600 bg-white dark:bg-gray-900'}`}>
+            <Download className="w-4 h-4"/> {backupDone?'Saved!':'Backup'}
+          </button>
+          <button onClick={() => setShow(true)} className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-primary-200 dark:shadow-primary-900/30 transition-all">
+            <Plus className="w-4 h-4" /> New Class
+          </button>
+        </div>
       </div>
+      {restoreMsg&&<div className={`mb-4 px-4 py-2.5 rounded-xl text-sm font-medium ${restoreMsg.startsWith('✅')?'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400':'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>{restoreMsg}</div>}
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
