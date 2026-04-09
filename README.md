@@ -200,13 +200,6 @@ npm run lint     # Run ESLint checks
 
 [![GitHub](https://img.shields.io/badge/GitHub-akhilpratapsingh--dev-181717?style=flat-square&logo=github)](https://github.com/akhilpratapsingh-dev)
 
----
-
-## 📄 License
-
-MIT License — feel free to use, modify, and distribute.
-
----
 
 <div align="center">
 
