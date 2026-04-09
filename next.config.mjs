@@ -1,11 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Treat pdfjs-dist as an external (not bundled by webpack) for server routes
-    serverComponentsExternalPackages: ['pdfjs-dist'],
-  },
   webpack: (config) => {
-    // Prevent webpack from trying to bundle pdfjs canvas dependency
+    // Prevent webpack from bundling canvas/encoding (used by pdfjs)
     config.resolve.alias.canvas = false;
     config.resolve.alias.encoding = false;
     return config;
