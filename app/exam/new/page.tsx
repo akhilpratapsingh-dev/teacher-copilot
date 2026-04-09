@@ -52,7 +52,7 @@ function ExamWizardInner() {
       setPdfStatus('AI is extracting questions...');
       const qs = await parseQuestionsFromPdf(text);
       if (!qs.length) throw new Error('No questions found in PDF');
-      setQuestions(qs.map(q => ({ id: uid(), text: q.text, answer: q.answer, maxMarks: q.maxMarks })));
+      setQuestions(qs.map((q: Question) => ({ id: uid(), text: q.text, answer: q.answer, maxMarks: q.maxMarks })));
       setPdfStatus('Done! ' + qs.length + ' questions extracted.');
     } catch (e: unknown) { setError('PDF error: ' + (e instanceof Error ? e.message : String(e))); setPdfStatus(''); }
     finally { setPdfLoading(false); }

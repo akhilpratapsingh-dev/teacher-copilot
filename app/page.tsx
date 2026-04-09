@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, BookOpen, BarChart3, Users, Trash2, ChevronRight, GraduationCap, TrendingUp } from 'lucide-react';
 import { getClasses, addClass, deleteClass, getResults } from '@/lib/storage';
-import { formatDate, pct } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import type { Class } from '@/lib/types';
 
 export default function HomePage() {

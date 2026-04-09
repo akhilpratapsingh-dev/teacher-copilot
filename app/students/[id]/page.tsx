@@ -26,7 +26,7 @@ function StudentProfileInner() {
     const s = e.students.find(s => s.name === name);
     if (!s) return null;
     return { examId: e.examId, title: e.title, date: e.date, totalMarks: s.totalMarks, maxMarks: s.maxMarks, percentage: s.maxMarks > 0 ? Math.round((s.totalMarks / s.maxMarks) * 100) : 0, revise: s.revise, feedback: s.overallFeedback, plagiarismFlag: s.plagiarismFlag };
-  }).filter(Boolean) as NonNullable<ReturnType<typeof history.map>[0]>[];
+  }).filter((x): x is NonNullable<typeof x> => x !== null);
 
   const chartData = studentExams.map((e, i) => ({ name: 'Exam ' + (i + 1), '%': e.percentage, title: e.title }));
   const avgPct = studentExams.length ? Math.round(studentExams.reduce((s, e) => s + e.percentage, 0) / studentExams.length) : 0;
@@ -80,7 +80,7 @@ function StudentProfileInner() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af' }} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#9ca3af' }} />
-              <Tooltip contentStyle={tt} formatter={(v: number) => [v + '%', 'Score']} />
+              <Tooltip contentStyle={tt} formatter={(v) => [v + '%', 'Score']} />
               <ReferenceLine y={avgPct} stroke="#6366f1" strokeDasharray="4 4" label={{ value: 'Avg', fill: '#6366f1', fontSize: 11 }} />
               <Line type="monotone" dataKey="%" stroke="#6366f1" strokeWidth={2.5} dot={{ fill: '#6366f1', r: 5 }} activeDot={{ r: 7 }} />
             </LineChart>

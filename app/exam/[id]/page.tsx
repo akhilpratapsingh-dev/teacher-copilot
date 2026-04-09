@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, CheckCircle2, RotateCcw } from 'lucide-react';
-import { getResults, updateOverride, saveResult } from '@/lib/storage';
+import { getResults, updateOverride } from '@/lib/storage';
 import { exportToExcel } from '@/lib/excelExport';
 import { pct, scoreColor, scoreGrade, formatDate } from '@/lib/utils';
 import type { ExamResult } from '@/lib/types';
@@ -48,11 +48,7 @@ export default function ExamResultsPage() {
   const tt = {backgroundColor:'#fff',border:'1px solid #e5e7eb',borderRadius:'12px',fontSize:'12px'};
 
   const studentBarData = students.map(s => ({ name: s.name.split(' ')[0], Marks: effTotal(s), Max: maxTotal }));
-  const qBarData = result.questions ? result.questions.map((q, qi) => {
-    const scores = students.map(s => effMark(s.name, s.questions[qi]?.qNo || qi+1, s.questions[qi]?.marksAwarded || 0));
-    const avg = scores.length ? scores.reduce((a,b) => a+b, 0)/scores.length : 0;
-    return { name: 'Q'+(qi+1), Average: parseFloat(avg.toFixed(1)), Max: q.maxMarks };
-  }) : students[0]?.questions.map((q, qi) => {
+  const qBarData = students[0]?.questions.map((q, qi) => {
     const scores = students.map(s => effMark(s.name, q.qNo, s.questions[qi]?.marksAwarded || 0));
     const avg = scores.reduce((a,b)=>a+b,0)/Math.max(scores.length,1);
     return { name: 'Q'+q.qNo, Average: parseFloat(avg.toFixed(1)), Max: q.maxMarks };
@@ -201,7 +197,7 @@ export default function ExamResultsPage() {
             <ResponsiveContainer width="100%" height={260}><BarChart data={studentBarData} margin={{top:5,right:10,left:0,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6"/><XAxis dataKey="name" tick={{fontSize:11,fill:'#9ca3af'}}/><YAxis domain={[0,maxTotal]} tick={{fontSize:11,fill:'#9ca3af'}}/><Tooltip contentStyle={tt}/><Bar dataKey="Marks" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>
           </div>
           {qBarData&&qBarData.length>0&&<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm"><h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Avg Per Question</h3><ResponsiveContainer width="100%" height={220}><BarChart data={qBarData} margin={{top:5,right:10,left:0,bottom:5}}><CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6"/><XAxis dataKey="name" tick={{fontSize:11,fill:'#9ca3af'}}/><YAxis tick={{fontSize:11,fill:'#9ca3af'}}/><Tooltip contentStyle={tt}/><Bar dataKey="Average" fill="#10b981" radius={[6,6,0,0]}/><Bar dataKey="Max" fill="#e5e7eb" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>}
-          {pieData.length>0&&<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm"><h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Grade Distribution</h3><ResponsiveContainer width="100%" height={300}><PieChart margin={{top:10,right:20,left:20,bottom:10}}><Pie data={pieData} cx="50%" cy="45%" innerRadius={65} outerRadius={100} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={true}>{pieData.map((_,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}</Pie><Tooltip contentStyle={tt} formatter={(value:number,name:string)=>[value+' student(s)',name]}/><Legend verticalAlign="bottom" height={36} iconType="circle"/></PieChart></ResponsiveContainer></div>}
+          {pieData.length>0&&<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm"><h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Grade Distribution</h3><ResponsiveContainer width="100%" height={300}><PieChart margin={{top:10,right:20,left:20,bottom:10}}><Pie data={pieData} cx="50%" cy="45%" innerRadius={65} outerRadius={100} paddingAngle={4} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={true}>{pieData.map((_,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]}/>)}</Pie><Tooltip contentStyle={tt}/><Legend verticalAlign="bottom" height={36} iconType="circle"/></PieChart></ResponsiveContainer></div>}
         </div>
       )}
 

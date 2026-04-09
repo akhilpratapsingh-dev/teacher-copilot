@@ -19,7 +19,7 @@ export default function ClassPage() {
 
   if (!cls) return <div className="text-center py-20 text-gray-400">Class not found</div>;
 
-  const allStudents = [...new Set(exams.flatMap(e => e.students.map(s => s.name)))];
+  const allStudents = Array.from(new Set(exams.flatMap(e => e.students.map(s => s.name))));
   const classAvgPct = exams.length ? Math.round(exams.reduce((s, e) => {
     const avg = e.students.reduce((a, st) => a + st.totalMarks, 0) / (e.students.length || 1);
     return s + (avg / (e.students[0]?.maxMarks || 1)) * 100;
@@ -119,7 +119,7 @@ export default function ClassPage() {
         <div className="mt-8">
           <h2 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Student Roster</h2>
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
-            {allStudents.map((name, i) => {
+            {allStudents.map((name) => {
               const history = exams.filter(e => e.students.some(s => s.name === name));
               const latest = history[0]?.students.find(s => s.name === name);
               return (
